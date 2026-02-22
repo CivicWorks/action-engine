@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Action Engine — Create Action</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-deep: #0C1117;
+    --bg-surface: #141B24;
+    --bg-card: #1A2332;
+    --bg-input: #1E2A3A;
+    --border: #2A3A4E;
+    --border-focus: #3B82F6;
+    --text-primary: #E8ECF1;
+    --text-secondary: #8899AE;
+    --text-muted: #5A6B80;
+    --accent-blue: #3B82F6;
+    --accent-blue-hover: #2563EB;
+    --accent-green: #10B981;
+    --accent-amber: #F59E0B;
+    --accent-red: #EF4444;
+    --accent-purple: #8B5CF6;
+    --civic-gold: #D4A843;
+    --civic-gold-dim: rgba(212, 168, 67, 0.15);
+    --radius: 8px;
+    --radius-lg: 12px;
+    --transition: 0.2s ease;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg-deep);
+    color: var(--text-primary);
+    min-height: 100vh;
+    line-height: 1.6;
+  }
+
+  /* Top Bar */
+  .topbar {
+    background: var(--bg-surface);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .topbar-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .topbar-brand .logo {
+    width: 32px;
+    height: 32px;
+    background: var(--civic-gold);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Fraunces', serif;
+    font-weight: 700;
+    font-size: 18px;
+    color: var(--bg-deep);
+  }
+
+  .topbar-brand span {
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--text-primary);
+    letter-spacing: -0.01em;
+  }
+
+  .topbar-org {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    background: var(--bg-card);
+    border-radius: 20px;
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+
+  .topbar-org .org-dot {
+    width: 8px;
+    height: 8px;
+    background: var(--accent-green);
+    border-radius: 50%;
+  }
+
+  /* Layout */
+  .layout {
+    display: grid;
+    grid-template-columns: 260px 1fr 300px;
+    min-height: calc(100vh - 57px);
+  }
+
+  /* Sidebar */
+  .sidebar {
+    background: var(--bg-surface);
+    border-right: 1px solid var(--border);
+    padding: 24px 0;
+  }
+
+  .sidebar-section {
+    padding: 0 16px;
+    margin-bottom: 24px;
+  }
+
+  .sidebar-section-title {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    padding: 0 12px;
+    margin-bottom: 8px;
+  }
+
+  .sidebar-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: var(--radius);
+    color: var(--text-secondary);
+    font-size: 14px;
+    cursor: pointer;
+    transition: all var(--transition);
+  }
+
+  .sidebar-item:hover {
+    background: var(--bg-card);
+    color: var(--text-primary);
+  }
+
+  .sidebar-item.active {
+    background: var(--civic-gold-dim);
+    color: var(--civic-gold);
+  }
+
+  .sidebar-item .icon {
+    width: 18px;
+    height: 18px;
+    opacity: 0.7;
+  }
+
+  .sidebar-item.active .icon {
+    opacity: 1;
+  }
+
+  /* Main Content */
+  .main {
+    padding: 32px 40px;
+    max-width: 800px;
+  }
+
+  .page-header {
+    margin-bottom: 32px;
+  }
+
+  .page-header h1 {
+    font-family: 'Fraunces', serif;
+    font-size: 28px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    letter-spacing: -0.02em;
+  }
+
+  .page-header p {
+    color: var(--text-secondary);
+    font-size: 14px;
+  }
+
+  /* Form Sections */
+  .form-section {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    margin-bottom: 20px;
+  }
+
+  .form-section-title {
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .form-section-title .num {
+    width: 22px;
+    height: 22px;
+    background: var(--civic-gold-dim);
+    color: var(--civic-gold);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  /* Form Fields */
+  .field {
+    margin-bottom: 18px;
+  }
+
+  .field:last-child {
+    margin-bottom: 0;
+  }
+
+  .field label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+  }
+
+  .field label .required {
+    color: var(--accent-red);
+    margin-left: 2px;
+  }
+
+  input[type="text"],
+  input[type="url"],
+  input[type="datetime-local"],
+  select,
+  textarea {
+    width: 100%;
+    padding: 10px 14px;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text-primary);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    transition: border-color var(--transition);
+    outline: none;
+  }
+
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--border-focus);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+
+  textarea {
+    resize: vertical;
+    min-height: 100px;
+  }
+
+  select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%235A6B80' d='M2 4l4 4 4-4'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 32px;
+    cursor: pointer;
+  }
+
+  .field-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+
+  .field-row-3 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 14px;
+  }
+
+  /* Image Upload */
+  .image-upload {
+    border: 2px dashed var(--border);
+    border-radius: var(--radius-lg);
+    padding: 32px;
+    text-align: center;
+    cursor: pointer;
+    transition: all var(--transition);
+  }
+
+  .image-upload:hover {
+    border-color: var(--civic-gold);
+    background: var(--civic-gold-dim);
+  }
+
+  .image-upload .upload-icon {
+    font-size: 28px;
+    margin-bottom: 8px;
+    opacity: 0.5;
+  }
+
+  .image-upload p {
+    color: var(--text-secondary);
+    font-size: 13px;
+  }
+
+  .image-upload p span {
+    color: var(--civic-gold);
+    font-weight: 500;
+  }
+
+  /* Checkbox / Issue Tags */
+  .issue-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .issue-tag {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all var(--transition);
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+
+  .issue-tag:hover {
+    border-color: var(--text-muted);
+    color: var(--text-primary);
+  }
+
+  .issue-tag.selected {
+    border-color: var(--civic-gold);
+    background: var(--civic-gold-dim);
+    color: var(--civic-gold);
+  }
+
+  .issue-tag input[type="checkbox"] {
+    display: none;
+  }
+
+  .issue-tag .check {
+    width: 16px;
+    height: 16px;
+    border: 1.5px solid var(--border);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all var(--transition);
+  }
+
+  .issue-tag.selected .check {
+    background: var(--civic-gold);
+    border-color: var(--civic-gold);
+  }
+
+  .issue-tag.selected .check::after {
+    content: '✓';
+    font-size: 10px;
+    color: var(--bg-deep);
+    font-weight: 700;
+  }
+
+  /* Toggle Switch */
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0;
+  }
+
+  .toggle-label {
+    font-size: 14px;
+    color: var(--text-primary);
+  }
+
+  .toggle-label small {
+    display: block;
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+
+  .toggle {
+    width: 44px;
+    height: 24px;
+    background: var(--border);
+    border-radius: 12px;
+    cursor: pointer;
+    position: relative;
+    transition: background var(--transition);
+  }
+
+  .toggle.on {
+    background: var(--civic-gold);
+  }
+
+  .toggle .knob {
+    width: 18px;
+    height: 18px;
+    background: white;
+    border-radius: 50%;
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    transition: transform var(--transition);
+  }
+
+  .toggle.on .knob {
+    transform: translateX(20px);
+  }
+
+  /* Right Panel — AI Review */
+  .review-panel {
+    background: var(--bg-surface);
+    border-left: 1px solid var(--border);
+    padding: 24px;
+  }
+
+  .review-panel h3 {
+    font-family: 'Fraunces', serif;
+    font-size: 16px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .review-panel h3 .ai-badge {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 3px 8px;
+    background: rgba(139, 92, 246, 0.15);
+    color: var(--accent-purple);
+    border-radius: 4px;
+  }
+
+  .review-checklist {
+    list-style: none;
+  }
+
+  .review-checklist li {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+
+  .review-checklist li:last-child {
+    border-bottom: none;
+  }
+
+  .check-status {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 10px;
+    margin-top: 1px;
+  }
+
+  .check-status.pass {
+    background: rgba(16, 185, 129, 0.15);
+    color: var(--accent-green);
+  }
+
+  .check-status.pending {
+    background: rgba(245, 158, 11, 0.15);
+    color: var(--accent-amber);
+  }
+
+  .check-status.empty {
+    background: var(--bg-card);
+    border: 1.5px solid var(--border);
+  }
+
+  .review-score {
+    margin-top: 20px;
+    padding: 16px;
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    text-align: center;
+  }
+
+  .review-score .score-value {
+    font-family: 'Fraunces', serif;
+    font-size: 42px;
+    font-weight: 700;
+    color: var(--accent-green);
+  }
+
+  .review-score .score-label {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+
+  .review-status {
+    margin-top: 16px;
+    padding: 12px;
+    border-radius: var(--radius);
+    font-size: 13px;
+    font-weight: 500;
+    text-align: center;
+  }
+
+  .review-status.auto-approve {
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--accent-green);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+  }
+
+  /* Action Buttons */
+  .form-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+  }
+
+  .btn {
+    padding: 10px 24px;
+    border-radius: var(--radius);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all var(--transition);
+  }
+
+  .btn-primary {
+    background: var(--civic-gold);
+    color: var(--bg-deep);
+  }
+
+  .btn-primary:hover {
+    background: #C49A38;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(212, 168, 67, 0.3);
+  }
+
+  .btn-secondary {
+    background: var(--bg-input);
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+  }
+
+  .btn-secondary:hover {
+    background: var(--bg-card);
+    color: var(--text-primary);
+  }
+
+  /* Source Badge */
+  .source-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .source-badge.native {
+    background: rgba(59, 130, 246, 0.1);
+    color: var(--accent-blue);
+  }
+
+  .source-badge.import {
+    background: rgba(245, 158, 11, 0.1);
+    color: var(--accent-amber);
+  }
+
+  /* Responsive */
+  @media (max-width: 1100px) {
+    .layout {
+      grid-template-columns: 1fr;
+    }
+    .sidebar, .review-panel {
+      display: none;
+    }
+    .main {
+      max-width: 100%;
+      padding: 24px 20px;
+    }
+  }
+
+  /* Subtle animation on load */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .form-section {
+    animation: fadeUp 0.4s ease both;
+  }
+
+  .form-section:nth-child(2) { animation-delay: 0.05s; }
+  .form-section:nth-child(3) { animation-delay: 0.1s; }
+  .form-section:nth-child(4) { animation-delay: 0.15s; }
+  .form-section:nth-child(5) { animation-delay: 0.2s; }
+</style>
+</head>
+<body>
+
+<!-- Top Bar -->
+<div class="topbar">
+  <div class="topbar-brand">
+    <div class="logo">A</div>
+    <span>Action Engine</span>
+    <span class="source-badge native">● Native</span>
+  </div>
+  <div class="topbar-org">
+    <span class="org-dot"></span>
+    Southern Arizona Climate Coalition
+  </div>
+</div>
+
+<!-- Layout -->
+<div class="layout">
+
+  <!-- Sidebar -->
+  <nav class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Actions</div>
+      <div class="sidebar-item active">
+        <svg class="icon" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9" cy="9" r="7"/><path d="M9 5.5v4l2.5 1.5"/></svg>
+        Create Action
+      </div>
+      <div class="sidebar-item">
+        <svg class="icon" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="14" height="12" rx="2"/><path d="M2 7h14"/></svg>
+        My Actions
+      </div>
+      <div class="sidebar-item">
+        <svg class="icon" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 9h14M9 2v14"/></svg>
+        Import from Mobilize
+      </div>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Insights</div>
+      <div class="sidebar-item">
+        <svg class="icon" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 14l4-5 3 3 7-8"/></svg>
+        Analytics
+      </div>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Organization</div>
+      <div class="sidebar-item">
+        <svg class="icon" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9" cy="6" r="3"/><path d="M3 16c0-3.3 2.7-6 6-6s6 2.7 6 6"/></svg>
+        Team
+      </div>
+      <div class="sidebar-item">
+        <svg class="icon" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 2l2 4h4l-3 3 1 4-4-2-4 2 1-4-3-3h4z"/></svg>
+        Trust Score: 0.94
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="main">
+    <div class="page-header">
+      <h1>Create New Action</h1>
+      <p>Submit a civic action for review and distribution to subscribers.</p>
+    </div>
+
+    <!-- Section 1: Basics -->
+    <div class="form-section">
+      <div class="form-section-title"><span class="num">1</span> Basic Information</div>
+
+      <div class="field">
+        <label>Title <span class="required">*</span></label>
+        <input type="text" placeholder="e.g. Community Rally for Public Transit Funding" value="Neighborhood Climate Resilience Workshop">
+      </div>
+
+      <div class="field">
+        <label>Description <span class="required">*</span></label>
+        <textarea placeholder="Describe the action — what participants will do, why it matters, and what to expect...">Join us for a hands-on workshop exploring how our neighborhood can prepare for extreme heat events and water scarcity. We'll cover home weatherization basics, community water harvesting, and how to advocate for municipal cooling centers. Bring your neighbors — this affects all of us.
+
+Light refreshments provided. ASL interpretation available on request.</textarea>
+      </div>
+
+      <div class="field">
+        <label>Action Image</label>
+        <div class="image-upload">
+          <div class="upload-icon">📷</div>
+          <p>Drag and drop an image, or <span>browse</span></p>
+          <p style="font-size: 11px; margin-top: 4px; color: var(--text-muted);">PNG, JPG up to 5MB. Recommended: 1200×630px</p>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Action URL</label>
+        <input type="url" placeholder="https://example.org/action-details" value="https://saclimatecoalition.org/workshops/resilience-2026">
+      </div>
+    </div>
+
+    <!-- Section 2: When -->
+    <div class="form-section">
+      <div class="form-section-title"><span class="num">2</span> Date &amp; Time</div>
+
+      <div class="toggle-row">
+        <div class="toggle-label">
+          All Day Event
+          <small>No specific start/end time</small>
+        </div>
+        <div class="toggle" onclick="this.classList.toggle('on')">
+          <div class="knob"></div>
+        </div>
+      </div>
+
+      <div class="field-row" style="margin-top: 14px;">
+        <div class="field">
+          <label>Start <span class="required">*</span></label>
+          <input type="datetime-local" value="2026-03-15T10:00">
+        </div>
+        <div class="field">
+          <label>End</label>
+          <input type="datetime-local" value="2026-03-15T13:00">
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label>Timezone <span class="required">*</span></label>
+          <select>
+            <option>America/Phoenix (MST)</option>
+            <option>America/Los_Angeles (PST)</option>
+            <option>America/Denver (MST)</option>
+            <option>America/Chicago (CST)</option>
+            <option>America/New_York (EST)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Action Weight</label>
+          <select>
+            <option>Moderate</option>
+            <option>Lightweight (quick / easy)</option>
+            <option>Heavyweight (significant commitment)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 3: Where -->
+    <div class="form-section">
+      <div class="form-section-title"><span class="num">3</span> Location</div>
+
+      <div class="toggle-row">
+        <div class="toggle-label">
+          Virtual / Entire Country
+          <small>No physical location required</small>
+        </div>
+        <div class="toggle" onclick="this.classList.toggle('on')">
+          <div class="knob"></div>
+        </div>
+      </div>
+
+      <div class="field" style="margin-top: 14px;">
+        <label>Venue</label>
+        <input type="text" placeholder="Venue name" value="Ward 3 Community Center">
+      </div>
+
+      <div class="field">
+        <label>Street Address</label>
+        <input type="text" placeholder="Street address" value="1500 N Oracle Rd">
+      </div>
+
+      <div class="field-row-3">
+        <div class="field">
+          <label>City <span class="required">*</span></label>
+          <input type="text" value="Tucson">
+        </div>
+        <div class="field">
+          <label>State/Region <span class="required">*</span></label>
+          <select>
+            <option selected>Arizona</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Postal Code</label>
+          <input type="text" value="85705">
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label>Country</label>
+          <select>
+            <option selected>United States</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Scope</label>
+          <select>
+            <option selected>Local</option>
+            <option>State / Regional</option>
+            <option>National</option>
+            <option>Global</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 4: Issues -->
+    <div class="form-section">
+      <div class="form-section-title"><span class="num">4</span> Issue Areas</div>
+
+      <div class="issue-grid">
+        <label class="issue-tag selected" onclick="this.classList.toggle('selected')">
+          <input type="checkbox" checked> <span class="check"></span> Climate / Environment
+        </label>
+        <label class="issue-tag" onclick="this.classList.toggle('selected')">
+          <input type="checkbox"> <span class="check"></span> Worker Rights / Unions
+        </label>
+        <label class="issue-tag" onclick="this.classList.toggle('selected')">
+          <input type="checkbox"> <span class="check"></span> Reproductive Rights
+        </label>
+        <label class="issue-tag selected" onclick="this.classList.toggle('selected')">
+          <input type="checkbox" checked> <span class="check"></span> Infrastructure
+        </label>
+        <label class="issue-tag" onclick="this.classList.toggle('selected')">
+          <input type="checkbox"> <span class="check"></span> Immigration
+        </label>
+        <label class="issue-tag" onclick="this.classList.toggle('selected')">
+          <input type="checkbox"> <span class="check"></span> Health Care
+        </label>
+        <label class="issue-tag" onclick="this.classList.toggle('selected')">
+          <input type="checkbox"> <span class="check"></span> Gun Violence Prevention
+        </label>
+        <label class="issue-tag" onclick="this.classList.toggle('selected')">
+          <input type="checkbox"> <span class="check"></span> Government
+        </label>
+        <label class="issue-tag" onclick="this.classList.toggle('selected')">
+          <input type="checkbox"> <span class="check"></span> Global Peace
+        </label>
+        <label class="issue-tag" onclick="this.classList.toggle('selected')">
+          <input type="checkbox"> <span class="check"></span> Equality
+        </label>
+        <label class="issue-tag" onclick="this.classList.toggle('selected')">
+          <input type="checkbox"> <span class="check"></span> Voting Rights
+        </label>
+        <label class="issue-tag" onclick="this.classList.toggle('selected')">
+          <input type="checkbox"> <span class="check"></span> Corruption
+        </label>
+        <label class="issue-tag" onclick="this.classList.toggle('selected')">
+          <input type="checkbox"> <span class="check"></span> Education
+        </label>
+        <label class="issue-tag" onclick="this.classList.toggle('selected')">
+          <input type="checkbox"> <span class="check"></span> Housing
+        </label>
+        <label class="issue-tag" onclick="this.classList.toggle('selected')">
+          <input type="checkbox"> <span class="check"></span> Criminal Justice Reform
+        </label>
+      </div>
+    </div>
+
+    <!-- Section 5: Distribution -->
+    <div class="form-section">
+      <div class="form-section-title"><span class="num">5</span> Distribution</div>
+
+      <div class="toggle-row">
+        <div class="toggle-label">
+          Publish to Social Platforms
+          <small>Distribute to Bluesky and CivicWorks public feed</small>
+        </div>
+        <div class="toggle on" onclick="this.classList.toggle('on')">
+          <div class="knob"></div>
+        </div>
+      </div>
+
+      <div class="toggle-row">
+        <div class="toggle-label">
+          Notify Matching Subscribers
+          <small>Push to subscribers by location and issue affinity</small>
+        </div>
+        <div class="toggle on" onclick="this.classList.toggle('on')">
+          <div class="knob"></div>
+        </div>
+      </div>
+
+      <div class="toggle-row">
+        <div class="toggle-label">
+          Include in Email Digest
+          <small>Add to the next subscriber digest email</small>
+        </div>
+        <div class="toggle on" onclick="this.classList.toggle('on')">
+          <div class="knob"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Submit -->
+    <div class="form-actions">
+      <button class="btn btn-primary">Submit for Review</button>
+      <button class="btn btn-secondary">Save Draft</button>
+    </div>
+  </main>
+
+  <!-- Right Panel: AI Review -->
+  <aside class="review-panel">
+    <h3>Review Status <span class="ai-badge">AI Powered</span></h3>
+
+    <ul class="review-checklist">
+      <li>
+        <span class="check-status pass">✓</span>
+        <div>
+          <strong style="color: var(--text-primary);">Title</strong><br>
+          Clear, descriptive, appropriate length
+        </div>
+      </li>
+      <li>
+        <span class="check-status pass">✓</span>
+        <div>
+          <strong style="color: var(--text-primary);">Description</strong><br>
+          Well-formed, informative, no hate/violence
+        </div>
+      </li>
+      <li>
+        <span class="check-status pass">✓</span>
+        <div>
+          <strong style="color: var(--text-primary);">Date &amp; Time</strong><br>
+          Valid future date, timezone set
+        </div>
+      </li>
+      <li>
+        <span class="check-status pass">✓</span>
+        <div>
+          <strong style="color: var(--text-primary);">Location</strong><br>
+          Complete address, geocodable
+        </div>
+      </li>
+      <li>
+        <span class="check-status pass">✓</span>
+        <div>
+          <strong style="color: var(--text-primary);">Issue Tags</strong><br>
+          At least one issue selected
+        </div>
+      </li>
+      <li>
+        <span class="check-status pass">✓</span>
+        <div>
+          <strong style="color: var(--text-primary);">Content Safety</strong><br>
+          No hate speech, violence, or harmful content
+        </div>
+      </li>
+      <li>
+        <span class="check-status pass">✓</span>
+        <div>
+          <strong style="color: var(--text-primary);">Org Trust Score</strong><br>
+          0.94 — Good standing
+        </div>
+      </li>
+    </ul>
+
+    <div class="review-score">
+      <div class="score-value">7/7</div>
+      <div class="score-label">Review checks passed</div>
+    </div>
+
+    <div class="review-status auto-approve">
+      ✓ &nbsp;Eligible for Auto-Approval
+    </div>
+
+    <div style="margin-top: 20px; padding: 14px; background: var(--bg-card); border-radius: var(--radius); font-size: 12px; color: var(--text-muted); line-height: 1.5;">
+      Actions that pass all AI review checks are automatically approved and distributed. Flagged items are routed to human review. Rejected actions are returned to your organization with specific feedback.
+    </div>
+  </aside>
+
+</div>
+
+</body>
+</html>
