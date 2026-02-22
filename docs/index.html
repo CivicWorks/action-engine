@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Action Engine — CivicWorks Prototype</title>
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700&family=Special+Elite&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0a0a0a; }
+  #root { min-height: 100vh; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useCallback, useRef } = React;
+
+
+
+const ISSUES = [
+  "Climate / Environment", "Worker Rights / Unions", "Reproductive Rights",
+  "Infrastructure", "Immigration", "Health Care", "Gun Violence Prevention",
+  "Government", "Global Peace", "Equality", "Voting Rights", "Corruption",
+  "Education", "Housing", "Criminal Justice Reform"
+];
+
+const SAMPLE_ACTIONS = [
+  {
+    id: "a1",
+    title: "Neighborhood Climate Resilience Workshop",
+    org: "Southern AZ Climate Coalition",
+    description: "Hands-on workshop on extreme heat preparedness, water harvesting, and advocating for municipal cooling centers. Bring your neighbors — this affects all of us.\n\nLight refreshments provided. ASL interpretation available on request.",
+    date: "2026-03-15T10:00",
+    endDate: "2026-03-15T13:00",
+    venue: "Ward 3 Community Center",
+    address: "1500 N Oracle Rd, Tucson, AZ 85705",
+    city: "Tucson", state: "AZ", scope: "Local",
+    issues: ["Climate / Environment", "Infrastructure"],
+    weight: "Moderate",
+    status: "published",
+    analytics: { views: 342, calendared: 87, completed: 41, shared: 23 }
+  },
+  {
+    id: "a2",
+    title: "Rally for Reproductive Healthcare Access",
+    org: "Arizona Women United",
+    description: "Community rally at the state capitol demanding restoration of reproductive healthcare access across Arizona. Speakers include healthcare providers, patients, and legal advocates.",
+    date: "2026-03-22T11:00",
+    endDate: "2026-03-22T14:00",
+    venue: "Arizona State Capitol",
+    address: "1700 W Washington St, Phoenix, AZ 85007",
+    city: "Phoenix", state: "AZ", scope: "State / Regional",
+    issues: ["Reproductive Rights", "Health Care", "Equality"],
+    weight: "Moderate",
+    status: "published",
+    analytics: { views: 1205, calendared: 389, completed: 0, shared: 156 }
+  }
+];
+
+/* ── civ.works Design System ──────────────────────────────── */
+const C = {
+  dark: "#0a0a0a",
+  darker: "#050505",
+  surface: "#111111",
+  card: "#161616",
+  input: "#1a1a1a",
+  border: "rgba(255,255,255,0.08)",
+  borderHover: "rgba(255,255,255,0.15)",
+  purple: "#7C3AED",
+  purpleDark: "#6D28D9",
+  purpleLight: "#8B5CF6",
+  purpleDim: "rgba(124,58,237,0.12)",
+  green: "#10B981",
+  greenDim: "rgba(16,185,129,0.12)",
+  amber: "#F59E0B",
+  amberDim: "rgba(245,158,11,0.12)",
+  red: "#EF4444",
+  blue: "#3B82F6",
+  blueDim: "rgba(59,130,246,0.12)",
+  white: "#ffffff",
+  offWhite: "#f5f5f5",
+  grey: "#a3a3a3",
+  greyDark: "#525252",
+  textMuted: "#6b7280",
+};
+
+/* Fonts loaded via HTML head */
+
+const HEADING = "'Special Elite', monospace";
+const BODY = "'Open Sans', sans-serif";
+
+/* ── ICS Generation ───────────────────────────────────────── */
+function generateICS(action) {
+  const fmt = (d) => new Date(d).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+  return `BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//CivicWorks//ActionEngine//EN\nBEGIN:VEVENT\nDTSTART:${fmt(action.date)}\nDTEND:${fmt(action.endDate)}\nSUMMARY:${action.title}\nDESCRIPTION:${action.description.replace(/\n/g, "\\n")}\nLOCATION:${action.venue}, ${action.address}\nORGANIZER:${action.org}\nSTATUS:CONFIRMED\nEND:VEVENT\nEND:VCALENDAR`;
+}
+
+function downloadICS(action) {
+  const blob = new Blob([generateICS(action)], { type: "text/calendar" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = `${action.title.replace(/\s+/g, "-").toLowerCase()}.ics`;
+  a.click(); URL.revokeObjectURL(url);
+}
+
+/* ── Logo ─────────────────────────────────────────────────── */
+function CivLogo({ size = 28 }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+      <div style={{
+        width: size, height: size, background: C.white, borderRadius: 4, padding: 2,
+        display: "flex", alignItems: "center", justifyContent: "center"
+      }}>
+        <svg viewBox="0 0 40 40" width={size - 4} height={size - 4}>
+          <rect width="40" height="40" rx="4" fill={C.white} />
+          <text x="20" y="28" textAnchor="middle" fontFamily={HEADING} fontSize="22" fontWeight="400" fill={C.dark}>cw</text>
+          <circle cx="33" cy="10" r="4" fill={C.purple} />
+        </svg>
+      </div>
+      <span style={{ fontFamily: HEADING, fontSize: size * 0.55, color: C.offWhite }}>
+        civ<span style={{ color: C.purple }}>.</span>works
+      </span>
+    </div>
+  );
+}
+
+/* ── Shared Components ────────────────────────────────────── */
+function Badge({ children, color, bg }) {
+  return (
+    <span style={{
+      fontSize: 10, fontWeight: 700, fontFamily: BODY, textTransform: "uppercase",
+      letterSpacing: "0.06em", padding: "3px 8px", borderRadius: 4,
+      background: bg || C.purpleDim, color: color || C.purple, display: "inline-block"
+    }}>{children}</span>
+  );
+}
+
+function Btn({ children, primary, small, onClick, disabled, style: sx }) {
+  return (
+    <button onClick={onClick} disabled={disabled} style={{
+      padding: small ? "6px 14px" : "10px 22px",
+      borderRadius: 6, border: primary ? "none" : `1px solid ${C.border}`,
+      background: disabled ? C.input : primary ? C.purple : C.input,
+      color: disabled ? C.greyDark : primary ? C.white : C.grey,
+      fontSize: small ? 12 : 14, fontWeight: 600, cursor: disabled ? "default" : "pointer",
+      transition: "all 0.2s", fontFamily: BODY, ...sx
+    }}>{children}</button>
+  );
+}
+
+function Card({ children, style: sx }) {
+  return (
+    <div style={{
+      background: C.card, border: `1px solid ${C.border}`,
+      borderRadius: 10, padding: 24, ...sx
+    }}>{children}</div>
+  );
+}
+
+function Input({ label, required, ...props }) {
+  return (
+    <div style={{ marginBottom: 14 }}>
+      {label && <label style={{ display: "block", fontSize: 13, fontWeight: 500, fontFamily: BODY, color: C.grey, marginBottom: 5 }}>
+        {label}{required && <span style={{ color: C.red, marginLeft: 2 }}>*</span>}
+      </label>}
+      <input {...props} style={{
+        width: "100%", padding: "9px 13px", background: C.input,
+        border: `1px solid ${C.border}`, borderRadius: 6, color: C.offWhite,
+        fontSize: 14, fontFamily: BODY, outline: "none", ...props.style
+      }} />
+    </div>
+  );
+}
+
+function Select({ label, options, value, onChange }) {
+  return (
+    <div style={{ marginBottom: 14 }}>
+      {label && <label style={{ display: "block", fontSize: 13, fontWeight: 500, fontFamily: BODY, color: C.grey, marginBottom: 5 }}>{label}</label>}
+      <select value={value} onChange={onChange} style={{
+        width: "100%", padding: "9px 13px", background: C.input,
+        border: `1px solid ${C.border}`, borderRadius: 6, color: C.offWhite,
+        fontSize: 14, fontFamily: BODY, outline: "none", appearance: "none"
+      }}>{options.map(o => <option key={o} value={o}>{o}</option>)}</select>
+    </div>
+  );
+}
+
+function IssuePill({ name, selected, onClick }) {
+  return (
+    <button onClick={onClick} style={{
+      padding: "6px 12px", borderRadius: 6,
+      border: `1px solid ${selected ? C.purple : C.border}`,
+      background: selected ? C.purpleDim : "transparent",
+      color: selected ? C.purpleLight : C.grey,
+      fontSize: 12, fontWeight: 500, cursor: "pointer", fontFamily: BODY, transition: "all 0.2s"
+    }}>{selected ? "✓ " : ""}{name}</button>
+  );
+}
+
+function StepIndicator({ steps, current }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 3, marginBottom: 28, flexWrap: "wrap" }}>
+      {steps.map((s, i) => (
+        <div key={i} style={{ display: "flex", alignItems: "center", gap: 4 }}>
+          <div style={{
+            width: 26, height: 26, borderRadius: "50%", display: "flex", alignItems: "center",
+            justifyContent: "center", fontSize: 11, fontWeight: 700, fontFamily: BODY,
+            background: i < current ? C.green : i === current ? C.purple : C.input,
+            color: i <= current ? C.white : C.greyDark, transition: "all 0.3s"
+          }}>{i < current ? "✓" : i + 1}</div>
+          <span style={{ fontSize: 10, fontFamily: BODY, color: i === current ? C.offWhite : C.greyDark, marginRight: 6 }}>{s}</span>
+          {i < steps.length - 1 && <div style={{ width: 16, height: 1, background: C.border, marginRight: 6 }} />}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function Stat({ label, value, color }) {
+  return (
+    <div style={{ textAlign: "center" }}>
+      <div style={{ fontSize: 30, fontWeight: 400, color: color || C.offWhite, fontFamily: HEADING }}>{value}</div>
+      <div style={{ fontSize: 11, color: C.textMuted, marginTop: 2, fontFamily: BODY }}>{label}</div>
+    </div>
+  );
+}
+
+function PrivacyNote({ children }) {
+  return (
+    <div style={{
+      marginTop: 18, padding: 12, borderRadius: 8, background: C.purpleDim,
+      fontSize: 12, fontFamily: BODY, color: C.purpleLight, lineHeight: 1.5,
+      display: "flex", alignItems: "flex-start", gap: 8, border: `1px solid rgba(124,58,237,0.15)`
+    }}>
+      <span style={{ fontSize: 15, flexShrink: 0 }}>🔒</span>
+      <span>{children}</span>
+    </div>
+  );
+}
+
+/* ── LANDING ─────────────────────────────────────────────── */
+
+function LandingScreen({ onChoose }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "100vh", padding: 24 }}>
+      <div style={{ textAlign: "center", marginBottom: 52 }}>
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: 24 }}>
+          <CivLogo size={44} />
+        </div>
+        <h1 style={{ fontSize: 38, fontFamily: HEADING, marginBottom: 10, color: C.offWhite, letterSpacing: "0.02em" }}>
+          Action Engine
+        </h1>
+        <p style={{ color: C.grey, fontSize: 15, fontFamily: BODY, maxWidth: 440, margin: "0 auto", lineHeight: 1.6 }}>
+          Privacy-first civic action creation, distribution, and engagement
+        </p>
+        <div style={{ width: 60, height: 3, background: C.purple, margin: "20px auto 0", borderRadius: 2 }} />
+      </div>
+
+      <div style={{ display: "flex", gap: 20, flexWrap: "wrap", justifyContent: "center" }}>
+        <button onClick={() => onChoose("subscriber")} style={{
+          width: 270, padding: 28, background: C.card, border: `1px solid ${C.border}`,
+          borderRadius: 10, cursor: "pointer", textAlign: "left", transition: "all 0.25s",
+          fontFamily: BODY, position: "relative", overflow: "hidden"
+        }}>
+          <div style={{ position: "absolute", top: 0, left: 0, width: "100%", height: 3, background: C.purple, opacity: 0.6 }} />
+          <div style={{ fontSize: 28, marginBottom: 14 }}>🙋</div>
+          <div style={{ fontSize: 17, fontFamily: HEADING, color: C.offWhite, marginBottom: 6 }}>I'm a Subscriber</div>
+          <div style={{ fontSize: 13, color: C.grey, lineHeight: 1.5 }}>
+            Discover actions matched to your interests and location, participate, and track your civic impact.
+          </div>
+        </button>
+
+        <button onClick={() => onChoose("org")} style={{
+          width: 270, padding: 28, background: C.card, border: `1px solid ${C.border}`,
+          borderRadius: 10, cursor: "pointer", textAlign: "left", transition: "all 0.25s",
+          fontFamily: BODY, position: "relative", overflow: "hidden"
+        }}>
+          <div style={{ position: "absolute", top: 0, left: 0, width: "100%", height: 3, background: C.purple, opacity: 0.6 }} />
+          <div style={{ fontSize: 28, marginBottom: 14 }}>🏛️</div>
+          <div style={{ fontSize: 17, fontFamily: HEADING, color: C.offWhite, marginBottom: 6 }}>I'm an Organization</div>
+          <div style={{ fontSize: 13, color: C.grey, lineHeight: 1.5 }}>
+            Create civic actions, reach matched subscribers, and receive anonymized engagement analytics.
+          </div>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ── SUBSCRIBER FLOW ─────────────────────────────────────── */
+
+function SubscriberRegister({ onComplete }) {
+  const [name, setName] = useState("");
+  const [city, setCity] = useState("Tucson");
+  const [state, setState] = useState("Arizona");
+  const [issues, setIssues] = useState(["Climate / Environment"]);
+  const [scope, setScope] = useState("Local");
+  const toggleIssue = (iss) => setIssues(prev => prev.includes(iss) ? prev.filter(i => i !== iss) : [...prev, iss]);
+
+  return (
+    <div style={{ maxWidth: 560, margin: "0 auto", padding: "40px 24px" }}>
+      <StepIndicator steps={["Register", "Browse Actions", "Participate", "Complete"]} current={0} />
+      <h2 style={{ fontFamily: HEADING, fontSize: 26, marginBottom: 4, color: C.offWhite }}>Create Your Account</h2>
+      <p style={{ color: C.grey, fontSize: 14, fontFamily: BODY, marginBottom: 28 }}>Your data stays private. Location is stored at city-level only.</p>
+      <Card>
+        <Input label="Display Name" required value={name} onChange={e => setName(e.target.value)} placeholder="How you'd like to be known" />
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          <Input label="City" required value={city} onChange={e => setCity(e.target.value)} />
+          <Select label="State" options={["Arizona", "California", "Colorado", "New Mexico", "Nevada"]} value={state} onChange={e => setState(e.target.value)} />
+        </div>
+        <Select label="Scope Preference" options={["Local", "State / Regional", "National", "Global", "All"]} value={scope} onChange={e => setScope(e.target.value)} />
+        <label style={{ display: "block", fontSize: 13, fontWeight: 500, fontFamily: BODY, color: C.grey, marginBottom: 10, marginTop: 8 }}>Issue Affinities</label>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+          {ISSUES.map(iss => <IssuePill key={iss} name={iss} selected={issues.includes(iss)} onClick={() => toggleIssue(iss)} />)}
+        </div>
+        <PrivacyNote>Your location is stored at reduced precision (city-level). Organizations only see aggregate analytics — never your identity.</PrivacyNote>
+        <div style={{ marginTop: 20, display: "flex", justifyContent: "flex-end" }}>
+          <Btn primary onClick={() => onComplete({ name, city, state, issues, scope })} disabled={!name || issues.length === 0}>Create Account →</Btn>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+function SubscriberFeed({ subscriber, onSelect }) {
+  const matched = SAMPLE_ACTIONS.filter(a => a.issues.some(i => subscriber.issues.includes(i)));
+  return (
+    <div style={{ maxWidth: 560, margin: "0 auto", padding: "40px 24px" }}>
+      <StepIndicator steps={["Register", "Browse Actions", "Participate", "Complete"]} current={1} />
+      <h2 style={{ fontFamily: HEADING, fontSize: 26, marginBottom: 4, color: C.offWhite }}>Your Matched Actions</h2>
+      <p style={{ color: C.grey, fontSize: 14, fontFamily: BODY, marginBottom: 24 }}>{matched.length} actions match your location and issue affinities</p>
+      <div style={{ display: "flex", gap: 6, marginBottom: 20, flexWrap: "wrap" }}>
+        {subscriber.issues.map(i => <Badge key={i} color={C.purpleLight} bg={C.purpleDim}>{i}</Badge>)}
+        <Badge color={C.offWhite} bg="rgba(255,255,255,0.06)">{subscriber.city}, {subscriber.state}</Badge>
+      </div>
+      {matched.map(action => (
+        <Card key={action.id} style={{ marginBottom: 14 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
+            <div>
+              <div style={{ fontSize: 11, color: C.textMuted, fontFamily: BODY, marginBottom: 3 }}>{action.org}</div>
+              <div style={{ fontSize: 17, fontFamily: HEADING, color: C.offWhite }}>{action.title}</div>
+            </div>
+            <Badge color={C.green} bg={C.greenDim}>{action.weight}</Badge>
+          </div>
+          <p style={{ fontSize: 13, fontFamily: BODY, color: C.grey, lineHeight: 1.5, marginBottom: 12 }}>{action.description.split("\n")[0]}</p>
+          <div style={{ display: "flex", gap: 16, fontSize: 12, fontFamily: BODY, color: C.textMuted, marginBottom: 14 }}>
+            <span>📅 {new Date(action.date).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}</span>
+            <span>📍 {action.venue}, {action.city}</span>
+          </div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 14 }}>
+            {action.issues.map(i => (
+              <span key={i} style={{ fontSize: 10, padding: "3px 8px", borderRadius: 4, fontFamily: BODY, background: subscriber.issues.includes(i) ? C.purpleDim : "rgba(255,255,255,0.04)", color: subscriber.issues.includes(i) ? C.purpleLight : C.textMuted }}>{i}</span>
+            ))}
+          </div>
+          <Btn primary small onClick={() => onSelect(action)}>View Details & Participate →</Btn>
+        </Card>
+      ))}
+    </div>
+  );
+}
+
+function ActionDetail({ action, subscriber, onBack }) {
+  const [calendared, setCalendared] = useState(false);
+  const [completed, setCompleted] = useState(false);
+  return (
+    <div style={{ maxWidth: 560, margin: "0 auto", padding: "40px 24px" }}>
+      <StepIndicator steps={["Register", "Browse Actions", "Participate", "Complete"]} current={completed ? 3 : 2} />
+      <button onClick={onBack} style={{ background: "none", border: "none", color: C.textMuted, fontSize: 13, cursor: "pointer", marginBottom: 16, fontFamily: BODY }}>← Back to actions</button>
+      <Card>
+        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+          <div style={{ fontSize: 12, color: C.textMuted, fontFamily: BODY }}>{action.org}</div>
+          <Badge color={C.green} bg={C.greenDim}>Published</Badge>
+        </div>
+        <h2 style={{ fontFamily: HEADING, fontSize: 22, marginBottom: 12, color: C.offWhite }}>{action.title}</h2>
+        <p style={{ fontSize: 14, fontFamily: BODY, color: C.grey, lineHeight: 1.6, marginBottom: 20, whiteSpace: "pre-line" }}>{action.description}</p>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 20 }}>
+          <div style={{ padding: 14, background: C.input, borderRadius: 8, border: `1px solid ${C.border}` }}>
+            <div style={{ fontSize: 11, color: C.textMuted, fontFamily: BODY, marginBottom: 4 }}>Date & Time</div>
+            <div style={{ fontSize: 13, fontWeight: 600, fontFamily: BODY, color: C.offWhite }}>{new Date(action.date).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}</div>
+            <div style={{ fontSize: 12, fontFamily: BODY, color: C.grey }}>{new Date(action.date).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })} – {new Date(action.endDate).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}</div>
+          </div>
+          <div style={{ padding: 14, background: C.input, borderRadius: 8, border: `1px solid ${C.border}` }}>
+            <div style={{ fontSize: 11, color: C.textMuted, fontFamily: BODY, marginBottom: 4 }}>Location</div>
+            <div style={{ fontSize: 13, fontWeight: 600, fontFamily: BODY, color: C.offWhite }}>{action.venue}</div>
+            <div style={{ fontSize: 12, fontFamily: BODY, color: C.grey }}>{action.address}</div>
+          </div>
+        </div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginBottom: 24 }}>
+          {action.issues.map(i => (
+            <span key={i} style={{ fontSize: 11, padding: "4px 10px", borderRadius: 4, fontFamily: BODY, background: subscriber.issues.includes(i) ? C.purpleDim : "rgba(255,255,255,0.04)", color: subscriber.issues.includes(i) ? C.purpleLight : C.textMuted }}>{i}{subscriber.issues.includes(i) ? " ✦" : ""}</span>
+          ))}
+        </div>
+        <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 20 }}>
+          {!completed ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <button onClick={() => { downloadICS(action); setCalendared(true); }} style={{ padding: "12px 20px", borderRadius: 8, border: `1px solid ${calendared ? "rgba(16,185,129,0.3)" : "rgba(124,58,237,0.3)"}`, background: calendared ? C.greenDim : C.purpleDim, color: calendared ? C.green : C.purpleLight, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: BODY, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                {calendared ? "✓ Calendar Reminder Downloaded" : "📅 Add to Calendar (Download .ics)"}
+              </button>
+              <button onClick={() => setCompleted(true)} style={{ padding: "12px 20px", borderRadius: 8, border: "none", background: C.purple, color: C.white, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: BODY, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                ✊ Mark Action as Completed
+              </button>
+            </div>
+          ) : (
+            <div style={{ padding: 24, borderRadius: 10, background: C.greenDim, textAlign: "center", border: `1px solid rgba(16,185,129,0.2)` }}>
+              <div style={{ fontSize: 36, marginBottom: 8 }}>🎉</div>
+              <div style={{ fontSize: 20, fontFamily: HEADING, color: C.green, marginBottom: 6 }}>Action Completed!</div>
+              <div style={{ fontSize: 13, fontFamily: BODY, color: C.grey }}>Thank you, {subscriber.name}. Your participation has been anonymously recorded. The organizing group will receive aggregate impact data only.</div>
+            </div>
+          )}
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+/* ── ORG FLOW ────────────────────────────────────────────── */
+
+function OrgRegister({ onComplete }) {
+  const [orgName, setOrgName] = useState("");
+  const [contact, setContact] = useState("");
+  return (
+    <div style={{ maxWidth: 560, margin: "0 auto", padding: "40px 24px" }}>
+      <StepIndicator steps={["Register Org", "Create Action", "AI Review", "Published", "Analytics"]} current={0} />
+      <h2 style={{ fontFamily: HEADING, fontSize: 26, marginBottom: 4, color: C.offWhite }}>Register Your Organization</h2>
+      <p style={{ color: C.grey, fontSize: 14, fontFamily: BODY, marginBottom: 28 }}>Get verified to create and distribute civic actions.</p>
+      <Card>
+        <Input label="Organization Name" required value={orgName} onChange={e => setOrgName(e.target.value)} placeholder="e.g. Southern AZ Climate Coalition" />
+        <Input label="Contact Email" required type="text" value={contact} onChange={e => setContact(e.target.value)} placeholder="org@example.org" />
+        <PrivacyNote>Organization contact information is encrypted at rest and never shared with subscribers.</PrivacyNote>
+        <div style={{ marginTop: 16, display: "flex", justifyContent: "flex-end" }}>
+          <Btn primary onClick={() => onComplete({ orgName, contact })} disabled={!orgName || !contact}>Register & Continue →</Btn>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+function OrgCreateAction({ org, onSubmit }) {
+  const [title, setTitle] = useState("");
+  const [desc, setDesc] = useState("");
+  const [date, setDate] = useState("2026-03-20T10:00");
+  const [endDate, setEndDate] = useState("2026-03-20T13:00");
+  const [venue, setVenue] = useState("");
+  const [city, setCity] = useState("");
+  const [state, setState] = useState("Arizona");
+  const [issues, setIssues] = useState([]);
+  const [scope, setScope] = useState("Local");
+  const toggleIssue = (iss) => setIssues(prev => prev.includes(iss) ? prev.filter(i => i !== iss) : [...prev, iss]);
+  const canSubmit = title && desc && venue && city && issues.length > 0;
+
+  return (
+    <div style={{ maxWidth: 560, margin: "0 auto", padding: "40px 24px" }}>
+      <StepIndicator steps={["Register Org", "Create Action", "AI Review", "Published", "Analytics"]} current={1} />
+      <h2 style={{ fontFamily: HEADING, fontSize: 26, marginBottom: 4, color: C.offWhite }}>Create New Action</h2>
+      <p style={{ color: C.grey, fontSize: 14, fontFamily: BODY, marginBottom: 28 }}>Creating as <span style={{ color: C.purpleLight, fontWeight: 600 }}>{org.orgName}</span></p>
+
+      <Card style={{ marginBottom: 14 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, fontFamily: BODY, textTransform: "uppercase", letterSpacing: "0.08em", color: C.textMuted, marginBottom: 16 }}>Basic Information</div>
+        <Input label="Title" required value={title} onChange={e => setTitle(e.target.value)} placeholder="Clear, descriptive action title" />
+        <div style={{ marginBottom: 14 }}>
+          <label style={{ display: "block", fontSize: 13, fontWeight: 500, fontFamily: BODY, color: C.grey, marginBottom: 5 }}>Description <span style={{ color: C.red }}>*</span></label>
+          <textarea value={desc} onChange={e => setDesc(e.target.value)} placeholder="What participants will do, why it matters..." style={{ width: "100%", padding: "9px 13px", background: C.input, border: `1px solid ${C.border}`, borderRadius: 6, color: C.offWhite, fontSize: 14, fontFamily: BODY, outline: "none", minHeight: 80, resize: "vertical" }} />
+        </div>
+      </Card>
+
+      <Card style={{ marginBottom: 14 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, fontFamily: BODY, textTransform: "uppercase", letterSpacing: "0.08em", color: C.textMuted, marginBottom: 16 }}>When & Where</div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          <Input label="Start" required type="datetime-local" value={date} onChange={e => setDate(e.target.value)} />
+          <Input label="End" type="datetime-local" value={endDate} onChange={e => setEndDate(e.target.value)} />
+        </div>
+        <Input label="Venue" required value={venue} onChange={e => setVenue(e.target.value)} placeholder="Venue name" />
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          <Input label="City" required value={city} onChange={e => setCity(e.target.value)} />
+          <Select label="State" options={["Arizona", "California", "Colorado", "New Mexico"]} value={state} onChange={e => setState(e.target.value)} />
+        </div>
+        <Select label="Scope" options={["Local", "State / Regional", "National", "Global"]} value={scope} onChange={e => setScope(e.target.value)} />
+      </Card>
+
+      <Card style={{ marginBottom: 20 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, fontFamily: BODY, textTransform: "uppercase", letterSpacing: "0.08em", color: C.textMuted, marginBottom: 16 }}>Issue Areas</div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+          {ISSUES.map(iss => <IssuePill key={iss} name={iss} selected={issues.includes(iss)} onClick={() => toggleIssue(iss)} />)}
+        </div>
+      </Card>
+
+      <Btn primary onClick={() => onSubmit({ id: "new-" + Date.now(), title, description: desc, date, endDate, venue, address: `${venue}, ${city}, ${state}`, city, state, scope, issues, weight: "Moderate", org: org.orgName, status: "pending_ai_review", analytics: { views: 0, calendared: 0, completed: 0, shared: 0 } })} disabled={!canSubmit} style={{ width: "100%" }}>
+        Submit for AI Review →
+      </Btn>
+    </div>
+  );
+}
+
+function AIReview({ action, onApproved }) {
+  const [checks, setChecks] = useState([]);
+  const [done, setDone] = useState(false);
+  const allChecks = [
+    { name: "Title", detail: "Clear, descriptive, appropriate length" },
+    { name: "Description", detail: "Well-formed, informative, no hate/violence detected" },
+    { name: "Date & Time", detail: "Valid future date, timezone inferred" },
+    { name: "Location", detail: "Complete address, geocodable" },
+    { name: "Issue Tags", detail: `${action.issues.length} issue(s) selected` },
+    { name: "Content Safety", detail: "No hate speech, violence, or harmful content" },
+    { name: "Org Trust Score", detail: "New org — baseline trust applied" },
+  ];
+  const timerRef = useRef(null);
+  useState(() => {
+    let i = 0;
+    timerRef.current = setInterval(() => {
+      if (i < allChecks.length) { setChecks(prev => [...prev, allChecks[i]]); i++; }
+      else { clearInterval(timerRef.current); setDone(true); }
+    }, 600);
+    return () => clearInterval(timerRef.current);
+  });
+
+  return (
+    <div style={{ maxWidth: 560, margin: "0 auto", padding: "40px 24px" }}>
+      <StepIndicator steps={["Register Org", "Create Action", "AI Review", "Published", "Analytics"]} current={2} />
+      <h2 style={{ fontFamily: HEADING, fontSize: 26, marginBottom: 4, color: C.offWhite, display: "flex", alignItems: "center", gap: 10 }}>
+        AI Review <Badge color={C.purpleLight} bg={C.purpleDim}>Automated</Badge>
+      </h2>
+      <p style={{ color: C.grey, fontSize: 14, fontFamily: BODY, marginBottom: 28 }}>Reviewing "<span style={{ color: C.offWhite }}>{action.title}</span>"</p>
+      <Card>
+        {allChecks.map((check, i) => {
+          const passed = i < checks.length;
+          const current = i === checks.length && !done;
+          return (
+            <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 0", borderBottom: i < allChecks.length - 1 ? `1px solid ${C.border}` : "none", opacity: passed || current ? 1 : 0.25, transition: "all 0.3s" }}>
+              <div style={{ width: 24, height: 24, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, fontFamily: BODY, flexShrink: 0, background: passed ? C.greenDim : current ? C.amberDim : C.input, color: passed ? C.green : current ? C.amber : C.greyDark, border: !passed && !current ? `1px solid ${C.border}` : "none" }}>
+                {passed ? "✓" : current ? "…" : ""}
+              </div>
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 500, fontFamily: BODY, color: passed ? C.offWhite : C.textMuted }}>{check.name}</div>
+                {passed && <div style={{ fontSize: 12, fontFamily: BODY, color: C.grey }}>{check.detail}</div>}
+              </div>
+            </div>
+          );
+        })}
+        {done && (
+          <div style={{ marginTop: 20 }}>
+            <div style={{ padding: 16, borderRadius: 10, background: C.greenDim, textAlign: "center", border: `1px solid rgba(16,185,129,0.2)`, marginBottom: 16 }}>
+              <div style={{ fontSize: 28, fontFamily: HEADING, color: C.green }}>7/7 Passed</div>
+              <div style={{ fontSize: 13, fontFamily: BODY, color: C.green, marginTop: 2 }}>✓ Auto-Approved for Publication</div>
+            </div>
+            <Btn primary onClick={() => onApproved(action)} style={{ width: "100%" }}>Publish & Distribute →</Btn>
+          </div>
+        )}
+      </Card>
+    </div>
+  );
+}
+
+function OrgPublished({ action, onViewAnalytics }) {
+  const [channels, setChannels] = useState([]);
+  const [distributed, setDistributed] = useState(false);
+  const allChannels = [
+    { name: "CivicWorks Feed", icon: "📱", count: "Published" },
+    { name: "Bluesky", icon: "🦋", count: "Published" },
+    { name: "Subscriber Push", icon: "🔔", count: "47 matched subscribers notified" },
+    { name: "Email Digest", icon: "📧", count: "Queued for next digest" },
+  ];
+  const timerRef = useRef(null);
+  useState(() => {
+    let i = 0;
+    timerRef.current = setInterval(() => {
+      if (i < allChannels.length) { setChannels(prev => [...prev, allChannels[i]]); i++; }
+      else { clearInterval(timerRef.current); setDistributed(true); }
+    }, 700);
+    return () => clearInterval(timerRef.current);
+  });
+
+  return (
+    <div style={{ maxWidth: 560, margin: "0 auto", padding: "40px 24px" }}>
+      <StepIndicator steps={["Register Org", "Create Action", "AI Review", "Published", "Analytics"]} current={3} />
+      <h2 style={{ fontFamily: HEADING, fontSize: 26, marginBottom: 4, color: C.offWhite }}>Action Published!</h2>
+      <p style={{ color: C.grey, fontSize: 14, fontFamily: BODY, marginBottom: 28 }}>Distributing to matched subscribers…</p>
+      <Card>
+        {allChannels.map((ch, i) => {
+          const active = i < channels.length;
+          return (
+            <div key={i} style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 0", borderBottom: i < allChannels.length - 1 ? `1px solid ${C.border}` : "none", opacity: active ? 1 : 0.15, transition: "all 0.4s" }}>
+              <span style={{ fontSize: 22 }}>{ch.icon}</span>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 14, fontWeight: 500, fontFamily: BODY, color: C.offWhite }}>{ch.name}</div>
+                {active && <div style={{ fontSize: 12, fontFamily: BODY, color: C.green }}>{ch.count}</div>}
+              </div>
+              {active && <span style={{ color: C.green, fontSize: 16 }}>✓</span>}
+            </div>
+          );
+        })}
+        {distributed && (
+          <div style={{ marginTop: 20 }}>
+            <div style={{ padding: 14, borderRadius: 10, background: C.greenDim, marginBottom: 16, fontSize: 14, fontWeight: 600, fontFamily: BODY, color: C.green, textAlign: "center" }}>✓ Distribution Complete</div>
+            <Btn primary onClick={onViewAnalytics} style={{ width: "100%" }}>View Analytics Dashboard →</Btn>
+          </div>
+        )}
+      </Card>
+    </div>
+  );
+}
+
+function OrgAnalytics({ action, org }) {
+  const a = SAMPLE_ACTIONS[0].analytics;
+  return (
+    <div style={{ maxWidth: 560, margin: "0 auto", padding: "40px 24px" }}>
+      <StepIndicator steps={["Register Org", "Create Action", "AI Review", "Published", "Analytics"]} current={4} />
+      <h2 style={{ fontFamily: HEADING, fontSize: 26, marginBottom: 4, color: C.offWhite }}>Action Analytics</h2>
+      <p style={{ color: C.grey, fontSize: 14, fontFamily: BODY, marginBottom: 28 }}>Aggregate engagement data — <span style={{ color: C.purpleLight }}>no individual PII</span></p>
+
+      <Card style={{ marginBottom: 14 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 12 }}>
+          <Stat label="Views" value={a.views} color={C.blue} />
+          <Stat label="Calendared" value={a.calendared} color={C.amber} />
+          <Stat label="Completed" value={a.completed} color={C.green} />
+          <Stat label="Shared" value={a.shared} color={C.purpleLight} />
+        </div>
+      </Card>
+
+      <Card style={{ marginBottom: 14 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, fontFamily: BODY, textTransform: "uppercase", letterSpacing: "0.08em", color: C.textMuted, marginBottom: 16 }}>Engagement Funnel</div>
+        {[
+          { label: "Viewed", val: a.views, pct: 100 },
+          { label: "Calendared", val: a.calendared, pct: Math.round(a.calendared / a.views * 100) },
+          { label: "Completed", val: a.completed, pct: Math.round(a.completed / a.views * 100) },
+        ].map((row, i) => (
+          <div key={i} style={{ marginBottom: 12 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, fontFamily: BODY, marginBottom: 4 }}>
+              <span style={{ color: C.grey }}>{row.label}</span>
+              <span style={{ color: C.offWhite, fontWeight: 600 }}>{row.val} ({row.pct}%)</span>
+            </div>
+            <div style={{ height: 6, borderRadius: 3, background: C.input }}>
+              <div style={{ height: "100%", borderRadius: 3, width: `${row.pct}%`, background: `linear-gradient(90deg, ${C.purple}, ${C.purpleLight})`, transition: "width 0.8s ease" }} />
+            </div>
+          </div>
+        ))}
+      </Card>
+
+      <Card style={{ marginBottom: 14 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, fontFamily: BODY, textTransform: "uppercase", letterSpacing: "0.08em", color: C.textMuted, marginBottom: 16 }}>Distribution Channels</div>
+        {[
+          { channel: "CivicWorks Feed", views: 145, cal: 38 },
+          { channel: "Bluesky", views: 112, cal: 29 },
+          { channel: "Subscriber Push", views: 62, cal: 15 },
+          { channel: "Email Digest", views: 23, cal: 5 },
+        ].map((ch, i) => (
+          <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: i < 3 ? `1px solid ${C.border}` : "none", fontSize: 13, fontFamily: BODY }}>
+            <span style={{ color: C.offWhite }}>{ch.channel}</span>
+            <div style={{ display: "flex", gap: 16 }}>
+              <span style={{ color: C.textMuted }}>{ch.views} views</span>
+              <span style={{ color: C.purpleLight }}>{ch.cal} calendared</span>
+            </div>
+          </div>
+        ))}
+      </Card>
+
+      <PrivacyNote>All data shown is aggregate only. No individual subscriber information is included. CivicWorks does not track or share personal participation data.</PrivacyNote>
+    </div>
+  );
+}
+
+/* ── MAIN APP ────────────────────────────────────────────── */
+
+function ActionEnginePrototype() {
+  const [role, setRole] = useState(null);
+  const [screen, setScreen] = useState("landing");
+  const [subscriber, setSubscriber] = useState(null);
+  const [org, setOrg] = useState(null);
+  const [currentAction, setCurrentAction] = useState(null);
+  const [newAction, setNewAction] = useState(null);
+
+  const goHome = () => { setRole(null); setScreen("landing"); setSubscriber(null); setOrg(null); setCurrentAction(null); setNewAction(null); };
+
+  return (
+    <div style={{ background: C.dark, color: C.offWhite, minHeight: "100vh", fontFamily: BODY }}>
+      {screen !== "landing" && (
+        <div style={{ background: C.darker, borderBottom: `1px solid ${C.border}`, padding: "10px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 100, backdropFilter: "blur(10px)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <CivLogo size={26} />
+            <span style={{ color: C.textMuted, fontSize: 13, fontFamily: BODY }}>›</span>
+            <span style={{ fontFamily: HEADING, fontSize: 14, color: C.grey }}>Action Engine</span>
+            <Badge color={role === "subscriber" ? C.offWhite : C.purpleLight} bg={role === "subscriber" ? "rgba(255,255,255,0.06)" : C.purpleDim}>
+              {role === "subscriber" ? "Subscriber" : "Organization"}
+            </Badge>
+          </div>
+          <button onClick={goHome} style={{ background: "none", border: `1px solid ${C.border}`, borderRadius: 6, padding: "5px 12px", color: C.textMuted, fontSize: 12, cursor: "pointer", fontFamily: BODY }}>← Start Over</button>
+        </div>
+      )}
+
+      {screen === "landing" && <LandingScreen onChoose={(r) => { setRole(r); setScreen(r === "subscriber" ? "sub_register" : "org_register"); }} />}
+      {screen === "sub_register" && <SubscriberRegister onComplete={(s) => { setSubscriber(s); setScreen("sub_feed"); }} />}
+      {screen === "sub_feed" && <SubscriberFeed subscriber={subscriber} onSelect={(a) => { setCurrentAction(a); setScreen("sub_detail"); }} />}
+      {screen === "sub_detail" && <ActionDetail action={currentAction} subscriber={subscriber} onBack={() => setScreen("sub_feed")} />}
+      {screen === "org_register" && <OrgRegister onComplete={(o) => { setOrg(o); setScreen("org_create"); }} />}
+      {screen === "org_create" && <OrgCreateAction org={org} onSubmit={(a) => { setNewAction(a); setScreen("org_review"); }} />}
+      {screen === "org_review" && <AIReview action={newAction} onApproved={() => setScreen("org_published")} />}
+      {screen === "org_published" && <OrgPublished action={newAction} onViewAnalytics={() => setScreen("org_analytics")} />}
+      {screen === "org_analytics" && <OrgAnalytics action={newAction} org={org} />}
+    </div>
+  );
+}
+
+
+// Remove the font loader since we load via HTML head
+// Mount the app
+ReactDOM.createRoot(document.getElementById('root')).render(
+  React.createElement(ActionEnginePrototype)
+);
+</script>
+</body>
+</html>
